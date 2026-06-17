@@ -43,14 +43,38 @@ jobs:
           # ARCHIVE_STREAM_META: '1'
           # TWITCH_EMBED_PARENT: infiltruth.com   # override if embedding player elsewhere
 
-      - name: Commit updated live_streams.json (and archives/ if produced)
+      - name: Run intel fusion (correlate live_streams + planned_actions -> fused_hotspots)
+        run: python scripts/fuse_intel.py
+
+      - name: Commit updated live_streams.json + fused_hotspots.json (and archives/ if produced)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add live_streams.json
+          git add live_streams.json fused_hotspots.json
           git add stream_archives/ 2>/dev/null || true
-          git commit -m "chore: update live streams from detector v2.2 [skip ci]" || echo "No changes to commit"
+          git commit -m "chore: update live streams + fused hotspots from detector+fusion [skip ci]" || echo "No changes to commit"
           git push
 
       # Cloudflare R2 integration (recommended - see prior review).
       # Add R2_* secrets and uncomment if using frontlines-processed bucket etc.
+      # - name: Upload to Cloudflare R2 (frontlines-processed/live-streams/ + fused-intel/)
+      #   if: always()
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      #   run: |
+      #     pip install awscli
+      #     TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/snapshots/${TIMESTAMP}.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/latest.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     aws s3 cp fused_hotspots.json s3://frontlines-processed/fused-intel/snapshots/${TIMESTAMP}.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     aws s3 cp fused_hotspots.json s3://frontlines-processed/fused-intel/latest.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     echo "Uploaded live + fused intel to R2 (if secrets configured)"

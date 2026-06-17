@@ -9,8 +9,12 @@ Canonical data source for frontlines / infiltruth monitoring, research agents, a
 - `sources.json`: The source of truth. Curated list with `journalists_reporters_livestreamers` + `tiktok_livestreamers`. Supports `channel_id` (YouTube), `handles.{youtube,twitch,x,...}`, `discovery_keywords`, `priority`, `focus`.
 - `scripts/auto_detect_live_v2.py`: Main live stream detector (see below).
 - `scripts/auto_detect_live.py`: Legacy v1 (deprecated; kept for reference).
+- `scripts/fuse_intel.py`: Multi-source fusion script. Combines `live_streams.json` (root) + `data/planned_actions.json` into `fused_hotspots.json` using location/keyword/date/livestream_hints correlations.
 - `.github/workflows/detect-live.yml`: Scheduled CI runner (every 15min + manual).
+- `.github/workflows/detect-planned.yml`: Scheduled collector for planned actions + fusion.
 - `live_streams.json`: Generated output (committed by CI).
+- `fused_hotspots.json`: Generated fused intel (version, hotspots[] with correlated_live_streams, hotspot_score, intel_summary; committed by CI).
+- `data/planned_actions.json`: Curated/planned events layer (committed).
 - `requirements.txt`, `data/`, etc.
 
 ## Live Stream Detector (v2.2.0 — hardened)
@@ -50,11 +54,58 @@ USE_YT_DLP=0 YOUTUBE_API_KEY=xxx TWITCH_CLIENT_ID=... python scripts/auto_detect
 
 See script source header + `log_event` calls for more.
 
+## Multi-Source Intel Fusion
+
+`python scripts/fuse_intel.py`
+
+Simple pure-stdlib fusion that merges live streams (current detections) with planned actions (curated calendar/events data) to produce actionable `fused_hotspots.json`.
+
+**Correlations (lightweight, no deps):**
+- Location bucketing (minneapolis-mn / portland-or etc. from location strings + geo.place)
+- Keyword / tag / related_keywords overlap (normalized tokens)
+- Livestream_hints matching against stream source/title/focus (e.g. "Unicorn Riot", "Carissa Dez")
+- Date proximity (planned date vs stream discovered_at, bonuses for <=1d / <=3d)
+
+**Output** (`fused_hotspots.json` at repo root):
+```json
+{
+  "version": "1.0",
+  "last_updated": "...Z",
+  "count": N,
+  "hotspots": [{
+    "id": "hs-...",
+    "location": "...",
+    "geo": {...},
+    "date": "YYYY-MM-DD",
+    "description": "...",
+    "organizing_groups": [...],
+    "priority": "high",
+    "tags": [...],
+    "correlated_live_streams": [ {platform, title, source, watch_url, embed_url, match_score, ...} ],
+    "hotspot_score": 85,
+    "intel_summary": "3 correlated live stream(s) detected. Priority high. Key groups: ... Active sources: Unicorn Riot, ...",
+    ...
+  }],
+  "unmatched_live_streams": [...],
+  "stats": {"planned_actions": , "live_streams": , "correlated_pairs": }
+}
+```
+
+**In workflows**: `detect-live.yml` runs fusion after live detector (primary). `detect-planned.yml` runs it after collector. Both commit the fused output + upload examples to R2 (frontlines-processed/fused-intel/ + snapshots/).
+
+**Usage**: Consume hotspots for prioritized monitoring, UI clustering, or downstream D1/KV sync. Future: ACLED integration per prior pseudocode.
+
+Run locally (after a detector pass or with committed jsons):
+```bash
+python scripts/fuse_intel.py
+```
+
 ## Workflow
 
 - Edit `sources.json` (add/remove reporters, update handles/channel_ids).
-- CI detects on schedule or dispatch.
-- Consume `live_streams.json` (or sync to R2 / your frontend).
+- Edit `data/planned_actions.json` for curated events (or implement scripts/collect_planned_actions.py).
+- CI detects + fuses on schedule or dispatch.
+- Consume `live_streams.json` and `fused_hotspots.json` (or sync to R2 / your frontend / frontlines-intel D1).
 - For non-YT/Twitch (FB/IG/TT): rely on discovery_keywords + external agents (X search, Firecrawl, etc.).
 
 ## Security / Secrets
@@ -65,6 +116,8 @@ Never commit keys. Use repo secrets for `YOUTUBE_API_KEY`, `TWITCH_*`, optional 
 
 PRs welcome for new high-value on-the-ground sources. Prefer primary `channel_id` (YouTube) and clean `handles.twitch` etc. Update `last_updated` and notes.
 
-Last updated for v2.2 hardening: 2026-06-16
+Also contributions to fusion heuristics, collect_planned_actions.py, or ACLED layer welcome.
+
+Last updated for fusion + v2.2: 2026-06-17
 
 (Previous README content was minimal/placeholder; this is the authoritative current doc.)

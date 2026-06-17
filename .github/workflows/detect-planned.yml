@@ -26,8 +26,8 @@ jobs:
         run: |
           pip install -r requirements.txt
 
-      - name: Run planned actions collector
-        run: python scripts/collect_planned_actions.py || echo "collect script missing or failed; using committed data/planned_actions.json for fusion"
+      - name: Run planned actions collector (curated; future ACLED + calendar scrapes)
+        run: python scripts/collect_planned_actions.py
 
       - name: Run intel fusion (live + updated planned -> fused_hotspots)
         run: python scripts/fuse_intel.py
@@ -40,11 +40,9 @@ jobs:
           git commit -m "chore: update planned actions + fused hotspots [skip ci]" || echo "No changes to commit"
           git push
 
-      # Cloudflare R2 integration (recommended - mirrors live_streams pattern)
-      # Requires secrets: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
-      # Uses existing frontlines-processed bucket (see CF subagent report for paths)
-      # Also uploads fused intel.
-      #
+      # Full stack: GitHub Actions (cron + dispatch) + Cloudflare R2 (frontlines-processed/planned-actions/ + /fused-intel/ snapshots + latest when R2_* secrets configured).
+      # See prior CF subagent + data/README.md. Ready to uncomment for durable processed data layer (independent of GH commit history).
+      # Requires: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY.
       # - name: Upload to Cloudflare R2 (frontlines-processed/planned-actions/ + fused-intel/)
       #   if: always()
       #   env:

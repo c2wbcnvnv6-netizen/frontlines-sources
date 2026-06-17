@@ -55,8 +55,8 @@ jobs:
           git commit -m "chore: update live streams + fused hotspots from detector+fusion [skip ci]" || echo "No changes to commit"
           git push
 
-      # Cloudflare R2 integration (recommended - see prior review).
-      # Add R2_* secrets and uncomment if using frontlines-processed bucket etc.
+      # Full stack: GitHub Actions (15m live + 4h planned) + Cloudflare R2 (frontlines-processed/live-streams/ + /fused-intel/ + /planned-actions/ when secrets).
+      # See data/README.md and detect-planned.yml. R2 steps ready (uncomment + add secrets per CF subagent).
       # - name: Upload to Cloudflare R2 (frontlines-processed/live-streams/ + fused-intel/)
       #   if: always()
       #   env:

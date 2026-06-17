@@ -7,15 +7,17 @@ Canonical data source for frontlines / infiltruth monitoring, research agents, a
 ## Files
 
 - `sources.json`: The source of truth. Curated list with `journalists_reporters_livestreamers` + `tiktok_livestreamers`. Supports `channel_id` (YouTube), `handles.{youtube,twitch,x,...}`, `discovery_keywords`, `priority`, `focus`.
-- `scripts/auto_detect_live_v2.py`: Main live stream detector (see below).
+- `scripts/auto_detect_live_v2.py`: Main live stream detector (hardened v2.2; yt-dlp primary).
 - `scripts/auto_detect_live.py`: Legacy v1 (deprecated; kept for reference).
 - `scripts/fuse_intel.py`: Multi-source fusion script. Combines `live_streams.json` (root) + `data/planned_actions.json` into `fused_hotspots.json` using location/keyword/date/livestream_hints correlations.
-- `.github/workflows/detect-live.yml`: Scheduled CI runner (every 15min + manual).
-- `.github/workflows/detect-planned.yml`: Scheduled collector for planned actions + fusion.
+- `scripts/collect_planned_actions.py`: Planned actions curator (maintains `data/planned_actions.json` schema; stub ready for ACLED + public calendar automation).
+- `.github/workflows/detect-live.yml`: Scheduled CI runner for live (every 15min + manual) + fusion.
+- `.github/workflows/detect-planned.yml`: Scheduled collector for planned actions (every 4h + manual) + fusion.
 - `live_streams.json`: Generated output (committed by CI).
 - `fused_hotspots.json`: Generated fused intel (version, hotspots[] with correlated_live_streams, hotspot_score, intel_summary; committed by CI).
-- `data/planned_actions.json`: Curated/planned events layer (committed).
-- `requirements.txt`, `data/`, etc.
+- `data/planned_actions.json`: Curated/planned events layer (see data/README.md for schema).
+- `data/README.md`: Detailed docs for all data layers (sources, planned schema, generated, future ACLED).
+- `requirements.txt`, `data/`, `AGENTS.md`, etc.
 
 ## Live Stream Detector (v2.2.0 — hardened)
 
@@ -45,7 +47,7 @@ pip install -U yt-dlp
 # optional: export ARCHIVE_STREAM_META=1
 USE_YT_DLP=1 python scripts/auto_detect_live_v2.py
 # or force legacy APIs:
-USE_YT_DLP=0 YOUTUBE_API_KEY=xxx TWITCH_CLIENT_ID=... python scripts/auto_detect_live_v2.py
+USE_YT_DLP=0 YOUTUBE_API_KEY=xxx TWITCH_CLIENT_ID=... TWITCH_CLIENT_SECRET=... python scripts/auto_detect_live_v2.py
 ```
 
 **GitHub Action** automatically uses the hardened path + commits results (and archives if enabled).
@@ -103,10 +105,14 @@ python scripts/fuse_intel.py
 ## Workflow
 
 - Edit `sources.json` (add/remove reporters, update handles/channel_ids).
-- Edit `data/planned_actions.json` for curated events (or implement scripts/collect_planned_actions.py).
-- CI detects + fuses on schedule or dispatch.
+- Edit `data/planned_actions.json` for curated events (or extend `scripts/collect_planned_actions.py` for ACLED/automation).
+- CI detects + fuses on schedule or dispatch (full stack: GH Actions + CF R2 + future ACLED).
 - Consume `live_streams.json` and `fused_hotspots.json` (or sync to R2 / your frontend / frontlines-intel D1).
 - For non-YT/Twitch (FB/IG/TT): rely on discovery_keywords + external agents (X search, Firecrawl, etc.).
+
+## Data Documentation
+
+See `data/README.md` for planned_actions schema, fusion outputs, sources details, and future layer notes.
 
 ## Security / Secrets
 
@@ -116,8 +122,10 @@ Never commit keys. Use repo secrets for `YOUTUBE_API_KEY`, `TWITCH_*`, optional 
 
 PRs welcome for new high-value on-the-ground sources. Prefer primary `channel_id` (YouTube) and clean `handles.twitch` etc. Update `last_updated` and notes.
 
-Also contributions to fusion heuristics, collect_planned_actions.py, or ACLED layer welcome.
+Also contributions to fusion heuristics, `collect_planned_actions.py` (ACLED), R2/D1 pipelines, or agent rules welcome.
 
-Last updated for fusion + v2.2: 2026-06-17
+See AGENTS.md for agent-specific instructions (MCP GitHub/CF usage, edit-in-place, etc.).
+
+Last updated for repo-updates (collect script, AGENTS, data/README, full stack docs): 2026-06-17
 
 (Previous README content was minimal/placeholder; this is the authoritative current doc.)

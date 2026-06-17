@@ -1,0 +1,42 @@
+name: Detect Live Streams
+
+on:
+  schedule:
+    # Run every 15 minutes
+    - cron: '*/15 * * * *'
+  workflow_dispatch:  # Allow manual trigger from Actions tab
+
+permissions:
+  contents: write   # Needed to commit live_streams.json
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run live stream detector
+        run: python scripts/auto_detect_live_v2.py
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          # Add these too once you set the secrets (recommended for full functionality):
+          # TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          # TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+
+      - name: Commit updated live_streams.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add live_streams.json
+          git commit -m "chore: update live streams from detector [skip ci]" || echo "No changes to commit"
+          git push

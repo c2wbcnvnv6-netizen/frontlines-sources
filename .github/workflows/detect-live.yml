@@ -2,7 +2,8 @@ name: Detect Live Streams
 
 on:
   schedule:
-    # Run every 15 minutes. Tune based on quota (each YT search.list ~100 units).
+    # Run every 15 minutes. With yt-dlp preferred (default), quota usage for detection is ~0.
+    # Tune based on needs. API fallback path still notes the ~100 unit cost per YT search.
     - cron: '*/15 * * * *'
   workflow_dispatch:  # Allow manual trigger from Actions tab
 
@@ -22,44 +23,34 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
 
-      - name: Install dependencies
+      - name: Install dependencies + yt-dlp + ffmpeg (hardened detection, richer metadata, future stream archiving support)
         run: |
           pip install -r requirements.txt
+          python -m pip install -U yt-dlp
+          # ffmpeg useful for yt-dlp stream capture / post-processing if extended later
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg || true
+          echo "yt-dlp version: $(yt-dlp --version || python3 -c 'import yt_dlp; print(yt_dlp.version.__version__)' || echo 'unavailable')"
 
-      - name: Run live stream detector
+      - name: Run live stream detector (yt-dlp preferred when present)
         run: python scripts/auto_detect_live_v2.py
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          # Recommended for full functionality:
+          # Recommended for full fallback functionality (not needed if yt-dlp handles Twitch/YouTube live checks):
           TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
           TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          USE_YT_DLP: '1'
+          # Optional: set to '1' to persist full yt-dlp info.json snapshots (useful for later yt-dlp --load-info-json, Whisper transcripts, or archiving pipelines)
+          # ARCHIVE_STREAM_META: '1'
+          # TWITCH_EMBED_PARENT: infiltruth.com   # override if embedding player elsewhere
 
-      - name: Commit updated live_streams.json (git fallback)
+      - name: Commit updated live_streams.json (and archives/ if produced)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add live_streams.json
-          git commit -m "chore: update live streams from detector [skip ci]" || echo "No changes to commit"
+          git add stream_archives/ 2>/dev/null || true
+          git commit -m "chore: update live streams from detector v2.2 [skip ci]" || echo "No changes to commit"
           git push
 
-      # Cloudflare R2 integration (recommended - see review).
-      # Existing frontlines-* R2 buckets are already provisioned for this ecosystem.
-      # Add these secrets in repo settings (get from Cloudflare R2 dashboard for your account):
-      #   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
-      # Then uncomment the step below (uses aws s3 compat for R2).
-      #
-      # - name: Upload to Cloudflare R2 (frontlines-processed/live-streams/)
-      #   if: always()  # Run even on partial results
-      #   env:
-      #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      #   run: |
-      #     pip install awscli
-      #     TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
-      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/${TIMESTAMP}.json \
-      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-      #       --acl public-read || true
-      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/latest.json \
-      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
-      #       --acl public-read || true
-      #     echo "Uploaded to R2 (if secrets configured)"
+      # Cloudflare R2 integration (recommended - see prior review).
+      # Add R2_* secrets and uncomment if using frontlines-processed bucket etc.

@@ -2,12 +2,12 @@ name: Detect Live Streams
 
 on:
   schedule:
-    # Run every 15 minutes
+    # Run every 15 minutes. Tune based on quota (each YT search.list ~100 units).
     - cron: '*/15 * * * *'
   workflow_dispatch:  # Allow manual trigger from Actions tab
 
 permissions:
-  contents: write   # Needed to commit live_streams.json
+  contents: write   # Needed to commit or prepare uploads
 
 jobs:
   detect:
@@ -20,6 +20,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
@@ -29,14 +30,36 @@ jobs:
         run: python scripts/auto_detect_live_v2.py
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-          # Add these too once you set the secrets (recommended for full functionality):
-          # TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
-          # TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
+          # Recommended for full functionality:
+          TWITCH_CLIENT_ID: ${{ secrets.TWITCH_CLIENT_ID }}
+          TWITCH_CLIENT_SECRET: ${{ secrets.TWITCH_CLIENT_SECRET }}
 
-      - name: Commit updated live_streams.json
+      - name: Commit updated live_streams.json (git fallback)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add live_streams.json
           git commit -m "chore: update live streams from detector [skip ci]" || echo "No changes to commit"
           git push
+
+      # Cloudflare R2 integration (recommended - see review).
+      # Existing frontlines-* R2 buckets are already provisioned for this ecosystem.
+      # Add these secrets in repo settings (get from Cloudflare R2 dashboard for your account):
+      #   R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+      # Then uncomment the step below (uses aws s3 compat for R2).
+      #
+      # - name: Upload to Cloudflare R2 (frontlines-processed/live-streams/)
+      #   if: always()  # Run even on partial results
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      #   run: |
+      #     pip install awscli
+      #     TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/${TIMESTAMP}.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     aws s3 cp live_streams.json s3://frontlines-processed/live-streams/latest.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     echo "Uploaded to R2 (if secrets configured)"

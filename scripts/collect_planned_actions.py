@@ -46,7 +46,7 @@ def save_json(path, data):
 
 
 def main():
-    print("\ud83d\udcc5 Running planned actions collector (curated mode)...")
+    print("[INFO] Running planned actions collector (curated mode)...")
     planned_path = os.path.join('data', 'planned_actions.json')
     pa = load_json(planned_path, {"version": "1.1", "actions": []})
 
@@ -76,7 +76,7 @@ def main():
 
     if pa.get('last_updated') != original_last or True:  # always write to bump ts
         save_json(planned_path, pa)
-        print(f"\u2705 Updated {planned_path}: last_updated={pa['last_updated']}, count={pa['count']}")
+        print(f"[OK] Updated {planned_path}: last_updated={pa['last_updated']}, count={pa['count']}")
         print("   Ready for fuse_intel.py correlation (livestream_hints + geo + keywords).")
         print("   Full stack note: GH Actions (detect-planned) + CF R2 planned-actions/ (commented) + future ACLED.")
     else:

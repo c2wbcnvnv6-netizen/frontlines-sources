@@ -1,0 +1,104 @@
+{
+  "version": "1.1",
+  "last_updated": "2026-06-17T18:30:00Z",
+  "sources_used": ["curated-from-public-calendars", "igd-upcoming", "tcdsa-events", "melt-the-ice-organizers", "unicorn-riot-coverage"],
+  "count": 4,
+  "actions": [
+    {
+      "id": "pa-20260618-mn-capitol-001",
+      "date": "2026-06-18",
+      "time": "14:00-18:00",
+      "location": "Minneapolis, MN - State Capitol / downtown area",
+      "geo": {
+        "lat": 44.952,
+        "lon": -93.094,
+        "accuracy": "neighborhood",
+        "place": "Minnesota State Capitol"
+      },
+      "description": "Student-led walkout and rally against immigration enforcement and ICE operations.",
+      "organizing_groups": ["Students for Justice in Palestine local", "Indivisible Twin Cities", "pro-migrant coalitions"],
+      "link": "https://twincitiesdsa.org/events/",
+      "expected_turnout": "500-2000 (notes: school walkouts reported across 45 states; high student participation expected)",
+      "priority": "medium",
+      "tags": ["anti-ICE", "student", "walkout", "immigration", "campus"],
+      "livestream_hints": ["broadcastify:32602", "openmhz:psern025", "youtube:minneapolis protest live"],
+      "related_keywords": ["minneapolis", "protest", "ice", "walkout", "student"],
+      "related_stream_ids": [],
+      "source": "tcdsa-events + curated",
+      "discovered_at": "2026-06-17T12:00:00Z",
+      "notes": "High likelihood of multi-hour raw streams from known sources like Unicorn Riot coverage in Twin Cities."
+    },
+    {
+      "id": "pa-20260620-pdx-rdtw-001",
+      "date": "2026-06-20",
+      "time": "12:00-16:00",
+      "location": "Portland, OR - various downtown and waterfront locations",
+      "geo": {
+        "lat": 45.515,
+        "lon": -122.678,
+        "accuracy": "city",
+        "place": "Downtown Portland"
+      },
+      "description": "Running Down the Walls prisoner support action and march. Solidarity with political prisoners.",
+      "organizing_groups": ["It's Going Down network", "local anarchist collectives", "prisoner support groups"],
+      "link": "https://itsgoingdown.org/upcomingevents/",
+      "expected_turnout": "hundreds (recurring annual event with strong Portland autonomous scene participation)",
+      "priority": "high",
+      "tags": ["prisoner-support", "anarchist", "direct-action", "portland"],
+      "livestream_hints": ["Unicorn Riot", "Portland ICE live", "itsgoingdown live"],
+      "related_keywords": ["portland", "protest", "prisoner", "RDTW"],
+      "related_stream_ids": [],
+      "source": "igd-upcoming + curated",
+      "discovered_at": "2026-06-17T14:30:00Z",
+      "notes": "Strong Portland signal; often features multiple independent livestreamers. Correlates with UR coverage of autonomous actions."
+    },
+    {
+      "id": "pa-20260625-mn-melt-ice-001",
+      "date": "2026-06-25",
+      "time": "all-day series of actions",
+      "location": "Twin Cities, MN - multiple sites including ICE facilities, hotels, and public spaces",
+      "geo": {
+        "lat": 44.977,
+        "lon": -93.265,
+        "accuracy": "metro-area",
+        "place": "Minneapolis-St. Paul metro"
+      },
+      "description": "Melt the ICE week of action: protests, walkouts, teach-ins, noise demos, tenant actions against ICE operations and related housing/immigration issues.",
+      "organizing_groups": ["Twin Cities Tenant Union", "DSA Twin Cities", "Sunrise Movement locals", "SEIU elements", "Monarca/Unidos MN", "student groups"],
+      "link": "https://unicornriot.ninja/2026/melt-the-ice-organizers-share-lessons-ahead-of-week-of-action-against-ice/",
+      "expected_turnout": "large (multi-day coordinated actions across sites; strong local networks)",
+      "priority": "high",
+      "tags": ["anti-ICE", "tenant", "labor", "immigration", "week-of-action"],
+      "livestream_hints": ["Unicorn Riot", "Carissa Dez", "Chelly Bouferrache", "Andrew Mercado", "Minnesota ICE live"],
+      "related_keywords": ["minneapolis", "ice", "protest", "tenant union", "melt the ice"],
+      "related_stream_ids": [],
+      "source": "melt-the-ice-organizers + unicorn-riot-coverage",
+      "discovered_at": "2026-06-17T16:00:00Z",
+      "notes": "Direct from UR coverage and organizer lists. Excellent for correlating with high-priority sources in sources.json. Multi-location; monitor for live updates from known streamers."
+    },
+    {
+      "id": "pa-20260622-pdx-general-001",
+      "date": "2026-06-22",
+      "time": "18:00",
+      "location": "Portland, OR - general meeting and action planning",
+      "geo": {
+        "lat": 45.523,
+        "lon": -122.676,
+        "accuracy": "city",
+        "place": "Portland"
+      },
+      "description": "Portland DSA general meeting followed by branch actions and working group reports (labor, eco, anti-ICE).",
+      "organizing_groups": ["Portland DSA"],
+      "link": "https://portlanddsa.org/events/",
+      "expected_turnout": "100-300 (regular chapter events with action components)",
+      "priority": "medium",
+      "tags": ["dsa", "portland", "meeting", "labor", "anti-ICE"],
+      "livestream_hints": ["Portland DSA live", "Unicorn Riot"],
+      "related_keywords": ["portland", "dsa", "protest", "meeting"],
+      "related_stream_ids": [],
+      "source": "portland-dsa-events",
+      "discovered_at": "2026-06-17T17:00:00Z",
+      "notes": "Recurring; good for Portland autonomous and progressive signal. Often ties into broader actions listed on IGD and other calendars."
+    }
+  ]
+}

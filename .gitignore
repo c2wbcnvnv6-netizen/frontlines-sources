@@ -1,0 +1,27 @@
+# Generated data
+live_streams.json
+fused_hotspots.json
+stream_archives/
+planned_actions.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Env
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,58 @@
+name: Collect Planned Actions
+
+on:
+  schedule:
+    # Less frequent than live streams (actions change slower)
+    - cron: '0 */4 * * *'  # every 4 hours
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run planned actions collector
+        run: python scripts/collect_planned_actions.py
+
+      - name: Commit updated planned_actions.json (git fallback)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/planned_actions.json
+          git commit -m "chore: update planned actions from public calendars [skip ci]" || echo "No changes to commit"
+          git push
+
+      # Cloudflare R2 integration (recommended - mirrors live_streams pattern)
+      # Requires secrets: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+      # Uses existing frontlines-processed bucket (see CF subagent report for paths)
+      #
+      # - name: Upload to Cloudflare R2 (frontlines-processed/planned-actions/)
+      #   if: always()
+      #   env:
+      #     AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      #     AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      #   run: |
+      #     pip install awscli
+      #     TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+      #     aws s3 cp data/planned_actions.json s3://frontlines-processed/planned-actions/snapshots/${TIMESTAMP}.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     aws s3 cp data/planned_actions.json s3://frontlines-processed/planned-actions/latest.json \
+      #       --endpoint-url https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com \
+      #       --acl public-read || true
+      #     echo "Uploaded planned actions to R2 (if secrets configured)"
